@@ -13,6 +13,9 @@ from backend.config import AppConfig
 # 内存存储单例（确保 seed 和 app 使用相同实例）
 _memory_user_repo = None
 _memory_doc_repo = None
+_memory_conversation_repo = None
+_memory_message_repo = None
+_memory_agent_repo = None
 
 
 def get_memory_user_repository():
@@ -31,6 +34,33 @@ def get_memory_document_repository():
         from backend.repositories.memory import InMemoryDocumentRepository
         _memory_doc_repo = InMemoryDocumentRepository()
     return _memory_doc_repo
+
+
+def get_memory_conversation_repository():
+    """获取内存对话 Repository 单例。"""
+    global _memory_conversation_repo
+    if _memory_conversation_repo is None:
+        from backend.repositories.conversation_memory import InMemoryConversationRepository
+        _memory_conversation_repo = InMemoryConversationRepository()
+    return _memory_conversation_repo
+
+
+def get_memory_message_repository():
+    """获取内存消息 Repository 单例。"""
+    global _memory_message_repo
+    if _memory_message_repo is None:
+        from backend.repositories.conversation_memory import InMemoryMessageRepository
+        _memory_message_repo = InMemoryMessageRepository()
+    return _memory_message_repo
+
+
+def get_memory_agent_repository():
+    """获取内存 Agent Repository 单例。"""
+    global _memory_agent_repo
+    if _memory_agent_repo is None:
+        from backend.repositories.agent_memory import InMemoryAgentRepository
+        _memory_agent_repo = InMemoryAgentRepository()
+    return _memory_agent_repo
 
 
 def create_user_repository():
@@ -57,6 +87,48 @@ def create_document_repository():
         return get_memory_document_repository()
 
 
+def create_conversation_repository():
+    """创建对话 Repository。"""
+    from backend.config import config as app_config
+
+    if app_config.repo_backend == "mysql":
+        # TODO: 实现 MySQL 对话 Repository
+        # from backend.repositories.mysql import MySQLConversationRepository, get_mysql_session
+        # session = get_mysql_session()
+        # return MySQLConversationRepository(session)
+        return get_memory_conversation_repository()
+    else:
+        return get_memory_conversation_repository()
+
+
+def create_message_repository():
+    """创建消息 Repository。"""
+    from backend.config import config as app_config
+
+    if app_config.repo_backend == "mysql":
+        # TODO: 实现 MySQL 消息 Repository
+        # from backend.repositories.mysql import MySQLMessageRepository, get_mysql_session
+        # session = get_mysql_session()
+        # return MySQLMessageRepository(session)
+        return get_memory_message_repository()
+    else:
+        return get_memory_message_repository()
+
+
+def create_agent_repository():
+    """创建 Agent Repository。"""
+    from backend.config import config as app_config
+
+    if app_config.repo_backend == "mysql":
+        # TODO: 实现 MySQL Agent Repository
+        # from backend.repositories.mysql import MySQLAgentRepository, get_mysql_session
+        # session = get_mysql_session()
+        # return MySQLAgentRepository(session)
+        return get_memory_agent_repository()
+    else:
+        return get_memory_agent_repository()
+
+
 class Container(containers.DeclarativeContainer):
     """应用依赖注入容器。"""
 
@@ -72,6 +144,9 @@ class Container(containers.DeclarativeContainer):
     # Repository 层（根据环境变量选择实现）
     user_repository = providers.Singleton(create_user_repository)
     document_repository = providers.Singleton(create_document_repository)
+    conversation_repository = providers.Singleton(create_conversation_repository)
+    message_repository = providers.Singleton(create_message_repository)
+    agent_repository = providers.Singleton(create_agent_repository)
 
     @classmethod
     def init_resources(cls):

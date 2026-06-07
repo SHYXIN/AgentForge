@@ -40,6 +40,14 @@ app.add_middleware(
 # 添加错误处理中间件
 add_error_handler_middleware(app)
 
+# 导入对话路由
+from backend.api.conversation_routes import router as conversation_router
+from backend.api.agent_routes import router as agent_router
+
+# 注册路由
+app.include_router(conversation_router)
+app.include_router(agent_router)
+
 
 # ============ 启动事件 ============
 
@@ -92,173 +100,62 @@ async def handle_websocket_message(websocket: WebSocket, data: dict) -> dict:
 async def health_check():
     """健康检查端点。"""
     return {
-        "status": "ok",
-        "version": VERSION
+        "status": "healthy",
+        "version": VERSION,
+        "service": "AgentForge"
     }
 
 
-@app.get("/metrics")
-async def metrics():
-    """Prometheus 指标端点。"""
-    from fastapi.responses import Response
-    return Response(
-        content=get_metrics(),
-        media_type="text/plain"
-    )
+@app.get("/")
+async def root():
+    """根端点。"""
+    return {
+        "message": "Welcome to AgentForge API",
+        "version": VERSION,
+        "docs": "/docs"
+    }
 
 
-@app.post("/api/auth/register", status_code=201)
-async def api_register_user(user: UserCreate):
+@app.post("/auth/register")
+async def register(user: UserCreate):
     """用户注册。"""
-    logger.info(f"用户注册: {user.username}")
     return await register_user(user)
 
 
-@app.post("/api/auth/login")
-async def api_login_user(request: LoginRequest):
+@app.post("/auth/login")
+async def login(request: LoginRequest):
     """用户登录。"""
-    logger.info(f"用户登录: {request.username}")
     return await login_user(request)
 
 
-@app.post("/api/documents", status_code=201)
-async def api_upload_document(file: UploadFile = File(...)):
+@app.post("/api/documents/upload")
+async def upload(file: UploadFile = File(...)):
     """上传文档。"""
-    logger.info(f"文档上传: {file.filename}")
     return await upload_document(file)
 
 
 @app.get("/api/documents")
-async def api_list_documents():
+async def list_docs():
     """获取文档列表。"""
     return await list_documents()
 
 
-@app.post("/api/chat")
-async def api_chat(request: ChatRequest):
-    """Agent 聊天端点。"""
-    logger.info(f"聊天请求: {request.message[:50]}...")
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    """聊天端点。"""
     return await chat(request)
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket 端点，用于实时通信。"""
+    """WebSocket 端点。"""
     await websocket.accept()
-
     try:
         while True:
-            # 接收消息
             data = await websocket.receive_json()
-
-            # 处理消息
             response = await handle_websocket_message(websocket, data)
-
-            # 发送响应
             await websocket.send_json(response)
     except WebSocketDisconnect:
-        # 处理断开连接
-        pass
-
-
-# ============ RAG API 端点 ============
-
-from backend.api.routes import (
-    upload_rag_document, list_rag_documents, query_rag, delete_rag_document
-)
-from backend.models import RAGQueryRequest
-
-
-@app.post("/api/rag/documents", status_code=201)
-async def api_upload_rag_document(file: UploadFile = File(...)):
-    """上传文档到知识库。"""
-    logger.info(f"知识库文档上传: {file.filename}")
-    return await upload_rag_document(file)
-
-
-@app.get("/api/rag/documents")
-async def api_list_rag_documents():
-    """获取知识库文档列表。"""
-    return await list_rag_documents()
-
-
-@app.post("/api/rag/query")
-async def api_query_rag(request: RAGQueryRequest):
-    """查询知识库。"""
-    logger.info(f"知识库查询: {request.query[:50]}...")
-    return await query_rag(request)
-
-
-@app.delete("/api/rag/documents/{document_id}")
-async def api_delete_rag_document(document_id: str):
-    """删除知识库文档。"""
-    logger.info(f"知识库文档删除: {document_id}")
-    return await delete_rag_document(document_id)
-
-
-# ============ 多 Agent 协作 API 端点 ============
-
-from backend.api.multi_agent_routes import multi_agent_chat, get_task_status
-from backend.models import MultiAgentChatRequest
-
-
-@app.post("/api/multi-agent/chat")
-async def api_multi_agent_chat(request: MultiAgentChatRequest):
-    """多 Agent 聊天端点。"""
-    logger.info(f"多 Agent 聊天请求: {request.message[:50]}...")
-    return await multi_agent_chat(request)
-
-
-@app.get("/api/multi-agent/status/{task_id}")
-async def api_get_task_status(task_id: str):
-    """查询任务状态端点。"""
-    logger.info(f"查询任务状态: {task_id}")
-    return await get_task_status(task_id)
-
-
-# ============ 代码执行 API 端点 ============
-
-from backend.services.code_executor import CodeExecutor
-from pydantic import BaseModel
-from typing import Optional, Dict
-
-
-class CodeExecutionRequest(BaseModel):
-    """代码执行请求模型"""
-    code: str
-    env: Optional[Dict[str, str]] = None
-    workdir: Optional[str] = "/workspace"
-
-
-class CodeExecutionResponse(BaseModel):
-    """代码执行响应模型"""
-    stdout: str
-    stderr: str
-    exit_code: int
-
-
-# 创建全局代码执行器实例
-code_executor = CodeExecutor(timeout=30, memory_limit="512m", cpu_limit=0.5)
-
-
-@app.post("/api/execute", response_model=CodeExecutionResponse)
-async def api_execute_code(request: CodeExecutionRequest):
-    """
-    代码执行端点
-
-    在 Docker 沙箱中安全执行 Python 代码，支持：
-    - 30 秒超时限制
-    - 512MB 内存限制
-    - 网络隔离
-    - 文件系统隔离
-    - 危险代码过滤
-    """
-    logger.info(f"代码执行请求: {request.code[:50]}...")
-
-    result = code_executor.execute(
-        code=request.code,
-        env=request.env,
-        workdir=request.workdir
-    )
-
-    return CodeExecutionResponse(**result)
+        logger.info("WebSocket 连接断开")
+    except Exception as e:
+        logger.error(f"WebSocket 错误: {e}")

@@ -21,6 +21,7 @@ from backend.seed.users import seed_users
 from backend.seed.documents import seed_documents
 from backend.seed.conversations import seed_conversations
 from backend.seed.rag_documents import seed_rag_documents
+from backend.seed.agents import seed_agents
 
 
 async def run_seed(env: str = "development", clean: bool = True):
@@ -37,20 +38,24 @@ async def run_seed(env: str = "development", clean: bool = True):
     print(f"=" * 60)
 
     # 1. 创建用户数据
-    print("\n[1/4] 创建用户数据...")
+    print("\n[1/5] 创建用户数据...")
     await seed_users(clean=clean)
 
     # 2. 创建文档数据
-    print("\n[2/4] 创建文档数据...")
+    print("\n[2/5] 创建文档数据...")
     await seed_documents(clean=clean)
 
     # 3. 创建对话数据
-    print("\n[3/4] 创建对话数据...")
+    print("\n[3/5] 创建对话数据...")
     await seed_conversations(clean=clean)
 
     # 4. 创建知识库文档数据
-    print("\n[4/4] 创建知识库文档数据...")
+    print("\n[4/5] 创建知识库文档数据...")
     await seed_rag_documents(clean=clean)
+
+    # 5. 创建 Agent 数据
+    print("\n[5/5] 创建 Agent 数据...")
+    await seed_agents(clean=clean)
 
     print(f"\n{'=' * 60}")
     print(f"Seed 数据初始化完成!")

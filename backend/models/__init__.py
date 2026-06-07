@@ -86,28 +86,43 @@ class Document(Base):
 class Conversation(Base):
     """对话模型。"""
     __tablename__ = "conversations"
-    
-    id = Column(String(36), primary_key=True)
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
-    title = Column(String(255), nullable=True)
+    title = Column(String(255), nullable=True, default="新对话")
+    description = Column(Text, default="")
+    is_active = Column(Integer, default=1, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # 关系
-    messages = relationship("Message", back_populates="conversation")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "title": self.title,
+            "description": self.description,
+            "is_active": bool(self.is_active),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "message_count": len(self.messages) if self.messages else 0
+        }
 
 
 class Message(Base):
     """消息模型。"""
     __tablename__ = "messages"
-    
-    id = Column(String(36), primary_key=True)
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
     conversation_id = Column(String(36), ForeignKey("conversations.id"), nullable=False)
     role = Column(String(20), nullable=False)  # user, assistant
     content = Column(Text, nullable=False)
+    agent_name = Column(String(50), nullable=True)
     agent_thoughts = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # 关系
     conversation = relationship("Conversation", back_populates="messages")
 

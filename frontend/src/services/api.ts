@@ -265,3 +265,257 @@ export async function deleteRAGDocument(documentId: string): Promise<any> {
 
   return response.json();
 }
+
+// ============ 对话管理 ============
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface CreateConversationRequest {
+  title?: string;
+  description?: string;
+  user_id: string;
+}
+
+export interface UpdateConversationRequest {
+  title?: string;
+  description?: string;
+}
+
+/**
+ * 创建对话
+ */
+export async function createConversation(data: CreateConversationRequest): Promise<Conversation> {
+  const response = await fetch(`${API_BASE_URL}/conversations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '创建失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 获取对话列表
+ */
+export async function listConversations(userId: string): Promise<Conversation[]> {
+  const response = await fetch(`${API_BASE_URL}/conversations?user_id=${userId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '获取失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 获取单个对话
+ */
+export async function getConversation(conversationId: string): Promise<Conversation> {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '获取失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 重命名对话
+ */
+export async function updateConversation(
+  conversationId: string,
+  data: UpdateConversationRequest
+): Promise<Conversation> {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '更新失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 删除对话
+ */
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '删除失败');
+  }
+}
+
+// ============ Agent 管理 ============
+
+export interface Agent {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+  config: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAgentRequest {
+  name: string;
+  role: string;
+  description?: string;
+  config?: string;
+  is_active?: number;
+}
+
+export interface UpdateAgentRequest {
+  name?: string;
+  role?: string;
+  description?: string;
+  config?: string;
+  is_active?: number;
+}
+
+/**
+ * 创建 Agent（仅管理员）
+ */
+export async function createAgent(data: CreateAgentRequest): Promise<Agent> {
+  const response = await fetch(`${API_BASE_URL}/agents`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '创建失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 获取 Agent 列表
+ */
+export async function listAgents(activeOnly: boolean = false): Promise<Agent[]> {
+  const url = activeOnly 
+    ? `${API_BASE_URL}/agents?active_only=true`
+    : `${API_BASE_URL}/agents`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '获取失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 获取单个 Agent
+ */
+export async function getAgent(agentId: string): Promise<Agent> {
+  const response = await fetch(`${API_BASE_URL}/agents/${agentId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '获取失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 更新 Agent（仅管理员）
+ */
+export async function updateAgent(
+  agentId: string,
+  data: UpdateAgentRequest
+): Promise<Agent> {
+  const response = await fetch(`${API_BASE_URL}/agents/${agentId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '更新失败');
+  }
+
+  return response.json();
+}
+
+/**
+ * 删除 Agent（仅管理员）
+ */
+export async function deleteAgent(agentId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/agents/${agentId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '删除失败');
+  }
+}
+
+/**
+ * 启用 Agent
+ */
+export async function enableAgent(agentId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/agents/${agentId}/enable`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '启用失败');
+  }
+}
+
+/**
+ * 禁用 Agent
+ */
+export async function disableAgent(agentId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/agents/${agentId}/disable`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || '禁用失败');
+  }
+}

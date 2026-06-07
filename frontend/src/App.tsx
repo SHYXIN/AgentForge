@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { ChatInterface } from './components/ChatInterface'
 import { DocumentManager } from './components/DocumentManager'
 import { AuthInterface } from './components/AuthInterface'
+import { AgentManager } from './components/AgentManager'
 import { WebSocketProvider } from './hooks/useWebSocket'
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chat' | 'documents'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'documents' | 'agents'>('chat')
 
   useEffect(() => {
-    // 检查是否已有有效的 token
     const token = localStorage.getItem('authToken')
     if (token) {
       setIsAuthenticated(true)
@@ -33,7 +33,6 @@ const App: React.FC = () => {
   return (
     <WebSocketProvider url="ws://localhost:8000/ws">
       <div className="min-h-screen bg-gray-100">
-        {/* 顶部导航栏 */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -53,9 +52,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* 主要内容区域 */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* 标签页导航 */}
           <div className="mb-6">
             <nav className="flex space-x-8">
               <button
@@ -78,15 +75,26 @@ const App: React.FC = () => {
               >
                 文档管理
               </button>
+              <button
+                onClick={() => setActiveTab('agents')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'agents'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Agent 管理
+              </button>
             </nav>
           </div>
 
-          {/* 内容区域 */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
             {activeTab === 'chat' ? (
               <div className="h-[600px] p-6">
                 <ChatInterface />
               </div>
+            ) : activeTab === 'agents' ? (
+              <AgentManager />
             ) : (
               <div className="p-6">
                 <DocumentManager />
