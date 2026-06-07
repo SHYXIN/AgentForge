@@ -2,13 +2,25 @@
 LangChain Agent 服务模块
 
 使用 LangChain 接入 MiMo API，提供真实 AI 回复和对话记忆。
+禁用代理以确保无论用户是否启用代理都能正常运行。
 """
 import os
 from typing import Optional
+import httpx
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 from backend.config import config as app_config
+
+
+def _create_sync_client():
+    """创建禁用代理的同步 HTTP 客户端。"""
+    return httpx.Client(proxies=None, timeout=30.0, follow_redirects=True)
+
+
+def _create_async_client():
+    """创建禁用代理的异步 HTTP 客户端。"""
+    return httpx.AsyncClient(proxies=None, timeout=30.0, follow_redirects=True)
 
 
 class LangChainAgent:
@@ -21,13 +33,15 @@ class LangChainAgent:
         self.prompt = self._create_prompt()
 
     def _create_llm(self) -> ChatOpenAI:
-        """创建 LLM。"""
+        """创建 LLM（禁用代理）。"""
         return ChatOpenAI(
             model_name=self.config.openai_model,
             openai_api_key=self.config.openai_api_key,
             base_url=self.config.openai_base_url,
             temperature=0.7,
             max_tokens=2000,
+            http_client=_create_sync_client(),
+            http_async_client=_create_async_client(),
         )
 
     def _create_prompt(self) -> ChatPromptTemplate:

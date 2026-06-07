@@ -2,9 +2,11 @@
 LangGraph Supervisor 图模块
 
 使用 LangGraph 构建 Supervisor 图，协调多个 Worker Agent 协作完成任务。
+禁用代理以确保无论用户是否启用代理都能正常运行。
 """
 import os
 from typing import Optional, Dict, Any, List
+import httpx
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import StateGraph, END
@@ -12,6 +14,16 @@ from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict, Annotated
 
 from backend.config import AppConfig
+
+
+def _create_sync_client():
+    """创建禁用代理的同步 HTTP 客户端。"""
+    return httpx.Client(proxies=None, timeout=30.0, follow_redirects=True)
+
+
+def _create_async_client():
+    """创建禁用代理的异步 HTTP 客户端。"""
+    return httpx.AsyncClient(proxies=None, timeout=30.0, follow_redirects=True)
 
 
 # ============ 状态定义 ============
@@ -37,7 +49,7 @@ class WorkerAgent:
         self.llm = self._create_llm()
 
     def _create_llm(self) -> ChatOpenAI:
-        """创建 LLM。"""
+        """创建 LLM（禁用代理）。"""
         config = AppConfig()
         return ChatOpenAI(
             model_name=config.openai_model,
@@ -45,6 +57,8 @@ class WorkerAgent:
             base_url=config.openai_base_url,
             temperature=0.7,
             max_tokens=2000,
+            http_client=_create_sync_client(),
+            http_async_client=_create_async_client(),
         )
 
     async def execute(self, task: str, context: Dict[str, Any] = None) -> str:
