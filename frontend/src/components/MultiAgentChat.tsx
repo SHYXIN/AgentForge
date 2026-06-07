@@ -32,7 +32,9 @@ export const MultiAgentChat: React.FC = () => {
   const { isConnected, lastMessage, sendMessage } = useWebSocket('ws://localhost:8000/ws');
 
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   React.useEffect(() => {
