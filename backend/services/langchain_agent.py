@@ -15,12 +15,22 @@ from backend.config import config as app_config
 
 def _create_sync_client():
     """创建禁用代理的同步 HTTP 客户端。"""
-    return httpx.Client(proxies=None, timeout=30.0, follow_redirects=True)
+    return httpx.Client(
+        proxies={},
+        timeout=30.0,
+        follow_redirects=True,
+        trust_env=False,  # 不从环境变量读取代理
+    )
 
 
 def _create_async_client():
     """创建禁用代理的异步 HTTP 客户端。"""
-    return httpx.AsyncClient(proxies=None, timeout=30.0, follow_redirects=True)
+    return httpx.AsyncClient(
+        proxies={},
+        timeout=30.0,
+        follow_redirects=True,
+        trust_env=False,  # 不从环境变量读取代理
+    )
 
 
 class LangChainAgent:
