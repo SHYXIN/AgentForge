@@ -3,7 +3,7 @@ AgentForge - FastAPI Backend
 
 This is the main application module.
 """
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes import (
@@ -43,10 +43,12 @@ add_error_handler_middleware(app)
 # 导入对话路由
 from backend.api.conversation_routes import router as conversation_router
 from backend.api.agent_routes import router as agent_router
+from backend.api.rag_routes import router as rag_router
 
 # 注册路由
 app.include_router(conversation_router)
 app.include_router(agent_router)
+app.include_router(rag_router)
 
 
 # ============ 启动事件 ============
@@ -116,19 +118,19 @@ async def root():
     }
 
 
-@app.post("/auth/register")
+@app.post("/api/auth/register", status_code=status.HTTP_201_CREATED)
 async def register(user: UserCreate):
     """用户注册。"""
     return await register_user(user)
 
 
-@app.post("/auth/login")
+@app.post("/api/auth/login")
 async def login(request: LoginRequest):
     """用户登录。"""
     return await login_user(request)
 
 
-@app.post("/api/documents/upload")
+@app.post("/api/documents", status_code=status.HTTP_201_CREATED)
 async def upload(file: UploadFile = File(...)):
     """上传文档。"""
     return await upload_document(file)
@@ -140,7 +142,7 @@ async def list_docs():
     return await list_documents()
 
 
-@app.post("/chat")
+@app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     """聊天端点。"""
     return await chat(request)

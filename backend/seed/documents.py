@@ -9,7 +9,7 @@ import os
 # 添加项目根目录到 sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from backend.container import get_memory_document_repository
+from backend.repositories.memory import InMemoryDocumentRepository
 
 
 async def seed_documents(clean: bool = True):
@@ -18,7 +18,7 @@ async def seed_documents(clean: bool = True):
     Args:
         clean: 是否清理旧数据
     """
-    doc_repo = get_memory_document_repository()
+    doc_repo = InMemoryDocumentRepository()
 
     if clean:
         print("清理旧文档数据...")

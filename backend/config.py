@@ -9,9 +9,15 @@ from pathlib import Path
 # 尝试加载 .env 文件
 try:
     from dotenv import load_dotenv
-    env_path = Path(__file__).parent.parent / ".env"
+    # 首先尝试当前目录的 .env
+    env_path = Path(__file__).parent / ".env"
     if env_path.exists():
         load_dotenv(env_path)
+    else:
+        # 然后尝试父目录的 .env
+        env_path = Path(__file__).parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
 except ImportError:
     pass
 

@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from backend.models import UserCreate
-from backend.container import get_memory_user_repository
+from backend.repositories.memory import InMemoryUserRepository
 
 
 async def seed_users(clean: bool = True):
@@ -19,7 +19,7 @@ async def seed_users(clean: bool = True):
     Args:
         clean: 是否清理旧数据
     """
-    user_repo = get_memory_user_repository()
+    user_repo = InMemoryUserRepository()
 
     if clean:
         print("清理旧用户数据...")

@@ -5,15 +5,18 @@
 注意：仅管理员可管理 Agent。
 """
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 
 
 def test_create_agent(client: TestClient):
     """应该能创建新 Agent。"""
+    # 使用唯一名称避免与种子数据冲突
+    unique_name = f"test-agent-{uuid.uuid4().hex[:8]}"
     response = client.post(
         "/api/agents",
         json={
-            "name": "coder",
+            "name": unique_name,
             "role": "代码工程师",
             "description": "负责编写和优化代码",
             "config": '{"model": "gpt-4"}',
@@ -24,7 +27,7 @@ def test_create_agent(client: TestClient):
     assert response.status_code == 201
     data = response.json()
     assert "id" in data
-    assert data["name"] == "coder"
+    assert data["name"] == unique_name
     assert data["role"] == "代码工程师"
     assert data["description"] == "负责编写和优化代码"
     assert data["is_active"] is True

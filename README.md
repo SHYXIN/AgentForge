@@ -175,16 +175,51 @@ docker-compose up -d
 
 ## 测试
 
+### 后端测试
+
 ```bash
-# 运行所有测试
 cd backend
-python -m pytest tests/ -v
+
+# 使用内存存储运行测试（推荐）
+REPO_BACKEND=memory python -m pytest tests/ -v
+
+# 使用 MySQL 存储运行测试（需要 MySQL 服务）
+REPO_BACKEND=mysql python -m pytest tests/ -v
 
 # 运行覆盖率报告
 python -m pytest tests/ --cov=. --cov-report=html
+
+# 运行指定测试文件
+python -m pytest tests/test_agent_api.py -v
+python -m pytest tests/test_conversation_api.py -v
 ```
 
-**测试覆盖**: 81 个测试，100% 通过率
+### 前端测试
+
+```bash
+cd frontend
+
+# 运行所有测试
+npm test -- --run
+
+# 运行测试并监视文件变化
+npm test
+```
+
+### 测试覆盖
+
+- **后端**: 174 个测试，100% 通过率
+- **前端**: 21 个测试，100% 通过率
+- **总计**: 195 个测试
+
+### 存储后端切换
+
+项目支持两种存储后端，通过环境变量 `REPO_BACKEND` 切换：
+
+- `memory` - 内存存储（用于开发和测试）
+- `mysql` - MySQL 存储（用于生产环境）
+
+切换存储后端后，所有数据操作会自动使用对应的 Repository 实现。
 
 ## 环境变量
 

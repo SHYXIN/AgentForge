@@ -10,58 +10,6 @@ from dependency_injector import containers, providers
 
 from backend.config import AppConfig
 
-# 内存存储单例（确保 seed 和 app 使用相同实例）
-_memory_user_repo = None
-_memory_doc_repo = None
-_memory_conversation_repo = None
-_memory_message_repo = None
-_memory_agent_repo = None
-
-
-def get_memory_user_repository():
-    """获取内存用户 Repository 单例。"""
-    global _memory_user_repo
-    if _memory_user_repo is None:
-        from backend.repositories.memory import InMemoryUserRepository
-        _memory_user_repo = InMemoryUserRepository()
-    return _memory_user_repo
-
-
-def get_memory_document_repository():
-    """获取内存文档 Repository 单例。"""
-    global _memory_doc_repo
-    if _memory_doc_repo is None:
-        from backend.repositories.memory import InMemoryDocumentRepository
-        _memory_doc_repo = InMemoryDocumentRepository()
-    return _memory_doc_repo
-
-
-def get_memory_conversation_repository():
-    """获取内存对话 Repository 单例。"""
-    global _memory_conversation_repo
-    if _memory_conversation_repo is None:
-        from backend.repositories.conversation_memory import InMemoryConversationRepository
-        _memory_conversation_repo = InMemoryConversationRepository()
-    return _memory_conversation_repo
-
-
-def get_memory_message_repository():
-    """获取内存消息 Repository 单例。"""
-    global _memory_message_repo
-    if _memory_message_repo is None:
-        from backend.repositories.conversation_memory import InMemoryMessageRepository
-        _memory_message_repo = InMemoryMessageRepository()
-    return _memory_message_repo
-
-
-def get_memory_agent_repository():
-    """获取内存 Agent Repository 单例。"""
-    global _memory_agent_repo
-    if _memory_agent_repo is None:
-        from backend.repositories.agent_memory import InMemoryAgentRepository
-        _memory_agent_repo = InMemoryAgentRepository()
-    return _memory_agent_repo
-
 
 def create_user_repository():
     """创建用户 Repository。"""
@@ -72,7 +20,8 @@ def create_user_repository():
         session = get_mysql_session()
         return MySQLUserRepository(session)
     else:
-        return get_memory_user_repository()
+        from backend.repositories.memory import InMemoryUserRepository
+        return InMemoryUserRepository()
 
 
 def create_document_repository():
@@ -84,7 +33,8 @@ def create_document_repository():
         session = get_mysql_session()
         return MySQLDocumentRepository(session)
     else:
-        return get_memory_document_repository()
+        from backend.repositories.memory import InMemoryDocumentRepository
+        return InMemoryDocumentRepository()
 
 
 def create_conversation_repository():
@@ -92,13 +42,12 @@ def create_conversation_repository():
     from backend.config import config as app_config
 
     if app_config.repo_backend == "mysql":
-        # TODO: 实现 MySQL 对话 Repository
-        # from backend.repositories.mysql import MySQLConversationRepository, get_mysql_session
-        # session = get_mysql_session()
-        # return MySQLConversationRepository(session)
-        return get_memory_conversation_repository()
+        from backend.repositories.mysql import MySQLConversationRepository, get_mysql_session
+        session = get_mysql_session()
+        return MySQLConversationRepository(session)
     else:
-        return get_memory_conversation_repository()
+        from backend.repositories.conversation_memory import InMemoryConversationRepository
+        return InMemoryConversationRepository()
 
 
 def create_message_repository():
@@ -106,13 +55,12 @@ def create_message_repository():
     from backend.config import config as app_config
 
     if app_config.repo_backend == "mysql":
-        # TODO: 实现 MySQL 消息 Repository
-        # from backend.repositories.mysql import MySQLMessageRepository, get_mysql_session
-        # session = get_mysql_session()
-        # return MySQLMessageRepository(session)
-        return get_memory_message_repository()
+        from backend.repositories.mysql import MySQLMessageRepository, get_mysql_session
+        session = get_mysql_session()
+        return MySQLMessageRepository(session)
     else:
-        return get_memory_message_repository()
+        from backend.repositories.conversation_memory import InMemoryMessageRepository
+        return InMemoryMessageRepository()
 
 
 def create_agent_repository():
@@ -120,13 +68,12 @@ def create_agent_repository():
     from backend.config import config as app_config
 
     if app_config.repo_backend == "mysql":
-        # TODO: 实现 MySQL Agent Repository
-        # from backend.repositories.mysql import MySQLAgentRepository, get_mysql_session
-        # session = get_mysql_session()
-        # return MySQLAgentRepository(session)
-        return get_memory_agent_repository()
+        from backend.repositories.mysql import MySQLAgentRepository, get_mysql_session
+        session = get_mysql_session()
+        return MySQLAgentRepository(session)
     else:
-        return get_memory_agent_repository()
+        from backend.repositories.agent_memory import InMemoryAgentRepository
+        return InMemoryAgentRepository()
 
 
 class Container(containers.DeclarativeContainer):
@@ -159,29 +106,32 @@ class Container(containers.DeclarativeContainer):
 
 def create_container() -> Container:
     """创建并配置容器。"""
+    from backend.config import AppConfig
+    app_config = AppConfig()
+
     container = Container()
     container.config.from_dict({
-        'debug': False,
-        'log_level': 'INFO',
+        'debug': app_config.debug,
+        'log_level': app_config.log_level,
         'repo': {
-            'backend': 'memory',
+            'backend': app_config.repo_backend,
         },
         'db': {
-            'enabled': False,
-            'host': 'localhost',
-            'port': 3306,
-            'user': 'root',
-            'password': '123456',
-            'name': 'agentforge',
+            'enabled': app_config.db_enabled if hasattr(app_config, 'db_enabled') else False,
+            'host': app_config.db_host,
+            'port': app_config.db_port,
+            'user': app_config.db_user,
+            'password': app_config.db_password,
+            'name': app_config.db_name,
         },
         'redis': {
-            'host': 'localhost',
-            'port': 6379,
-            'db': 0,
+            'host': app_config.redis_host,
+            'port': app_config.redis_port,
+            'db': app_config.redis_db,
         },
         'chroma': {
-            'host': 'localhost',
-            'port': 8001,
+            'host': app_config.chroma_host,
+            'port': app_config.chroma_port,
         },
     })
     container.init_resources()
